@@ -1,6 +1,7 @@
 
 import time
 
+from selenium.common import StaleElementReferenceException, ElementClickInterceptedException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -31,10 +32,16 @@ def book_appointment(user_config: UserConfig):
     found_termin = False
     num_next_clicks = 0
     while time.time() < timeout_start + timeout:
-        service_selection_next = WebDriverWait(driver, MAX_WAITING_TIME).until(
-            EC.element_to_be_clickable((By.ID, "applicationForm:managedForm:proceed")))
+        try:
+            service_selection_next = WebDriverWait(driver, MAX_WAITING_TIME).until(
+                EC.element_to_be_clickable((By.ID, "applicationForm:managedForm:proceed")))
 
-        service_selection_next.click()
+            service_selection_next.click()
+        except StaleElementReferenceException:
+            continue
+        except ElementClickInterceptedException:
+            continue
+
         print("Trying to Register for Appointment")
 
         print("Waiting 15 seconds for page to load")
@@ -43,7 +50,7 @@ def book_appointment(user_config: UserConfig):
 
         print("Checking if there's any appointments")
         try:
-            date = driver.find_element_by_class_name('ui-datepicker')
+            date = driver.find_element(By.CLASS_NAME,'ui-datepicker')
         except Exception as e:
             date = None
         if date:
@@ -58,9 +65,8 @@ def book_appointment(user_config: UserConfig):
 
 
 
-
 if __name__ == "__main__":
-    user_config = UserConfig(citizenship="North Macedonia",number_applicants="2", family_member="yes", family_citizenship="North Macedonia")
+    user_config = UserConfig(citizenship="North Macedonia",number_applicants="1", family_member="yes", family_citizenship="North Macedonia")
 
     while True:
         found_termin = book_appointment(user_config)
